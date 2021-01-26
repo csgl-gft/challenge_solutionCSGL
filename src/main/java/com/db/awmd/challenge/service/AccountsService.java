@@ -1,16 +1,15 @@
 package com.db.awmd.challenge.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.db.awmd.challenge.domain.Account;
 import com.db.awmd.challenge.domain.Status;
 import com.db.awmd.challenge.domain.TransferData;
-import com.db.awmd.challenge.exceptions.InvalidAccountException;
-import com.db.awmd.challenge.exceptions.InvalidAmmountException;
 import com.db.awmd.challenge.repository.AccountsRepository;
-import com.db.awmd.challenge.web.Slf4j;
 
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -23,8 +22,9 @@ public class AccountsService {
 	private final NotificationService notificationsService;
 
 	@Autowired
-	public AccountsService(AccountsRepository accountsRepository) {
+	public AccountsService(AccountsRepository accountsRepository, NotificationService notificationsService) {
 		this.accountsRepository = accountsRepository;
+		this.notificationsService = notificationsService;
 	}
 
 	public void createAccount(Account account) {
@@ -35,7 +35,7 @@ public class AccountsService {
 		return this.accountsRepository.getAccount(accountId);
 	}
 
-
+	/**********************/
 	/**
 	 * This method creates a transference from provided {@code accountId}
 	 * 
@@ -45,7 +45,7 @@ public class AccountsService {
 	 */
 	public Status crateTransfer(String fromAccountId, TransferData transferData) {
 
-		//Basic input validation 
+		// Basic input validation
 		if (transferData.getAmmount().doubleValue() <= 0)
 			return new Status(false, "A transfer with a negative ammount can not be crated.");
 
@@ -64,20 +64,21 @@ public class AccountsService {
 		if (toAccount == null)
 			return new Status(false, "To account can not be found");
 
-		//Core functionality 
+		// Core functionality
 		try {
-			//please note this method is expected to have a TransactionManager implementation.
+			// please note this method is expected to have a TransactionManager
+			// implementation.
 			accountsRepository.createTransfer(fromAccount, toAccount, transferData.getAmmount());
-			
+
 		} catch (Exception ex) {
 			log.error("Unexpected error when persisting the transfer", ex);
 			throw ex;
 		}
-		
+
 		notificationsService.notifyAboutTransfer(fromAccount,
-				String.format("A transfer to %s account with value %.5f has been created.", transferData.getToAccountId(),
-						transferData.getAmmount()));
-		
+				String.format("A transfer to %s account with value %.5f has been created.",
+						transferData.getToAccountId(), transferData.getAmmount()));
+
 		notificationsService.notifyAboutTransfer(fromAccount,
 				String.format("A transfer from %s account with value %.5f has been received. ", fromAccountId,
 						transferData.getAmmount()));
