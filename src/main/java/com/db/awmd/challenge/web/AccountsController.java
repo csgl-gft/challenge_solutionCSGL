@@ -1,6 +1,7 @@
 package com.db.awmd.challenge.web;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.domain.Status;
 import com.db.awmd.challenge.domain.TransferData;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
 import com.db.awmd.challenge.exceptions.InvalidAccountException;
@@ -57,10 +58,12 @@ public class AccountsController {
 			@RequestBody @Valid TransferData transferData) {
 		log.debug("Create transfer request for account {} ...", accountId);
 		try {
-			this.accountsService.crateTransfer(accountId, transferData);
-			return ResponseEntity.ok();
-		} catch (InvalidAmmountException | InvalidAccountException ex) {
-			return ResponseEntity.badRequest().body(ex.getClass() + " - " + ex.getMessage());
+			Status transferStatus = this.accountsService.crateTransfer(accountId, transferData);
+			
+			if(transferStatus.isOk())
+				return ResponseEntity.ok();
+			else
+				return ResponseEntity.badRequest().body("Request is not valid due to: "+transferStatus.getValidationMessage());
 		} catch (Exception ex) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getClass() + " - " + ex.getMessage());
 		}

@@ -1,6 +1,7 @@
 package com.db.awmd.challenge.service;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.domain.Status;
 import com.db.awmd.challenge.domain.TransferData;
 import com.db.awmd.challenge.exceptions.InvalidAccountException;
 import com.db.awmd.challenge.exceptions.InvalidAmmountException;
@@ -42,26 +43,26 @@ public class AccountsService {
 	 * @param transferData
 	 * @return
 	 */
-	public void crateTransfer(String fromAccountId, TransferData transferData) throws InvalidAccountException, InvalidAmmountException {
+	public Status crateTransfer(String fromAccountId, TransferData transferData) {
 
 		//Basic input validation 
 		if (transferData.getAmmount().doubleValue() <= 0)
-			throw new InvalidAmmountException("A transfer with a negative ammount can not be crated.");
+			return new Status(false, "A transfer with a negative ammount can not be crated.");
 
 		if (fromAccountId.compareTo(transferData.getToAccountId()) == 0) {
-			throw new InvalidAccountException("From and to accounts can not be the same.");
+			return new Status(false, "From and to accounts can not be the same.");
 		}
 
 		Account fromAccount = accountsRepository.getAccount(fromAccountId);
 		if (fromAccount == null)
-			throw new InvalidAccountException("From Account can not be found");
+			return new Status(false, "From account can not be found");
 
 		if (fromAccount.getBalance().doubleValue() - transferData.getAmmount().doubleValue() < 0)
-			throw new InvalidAmmountException("From Account can not afford to transfer provided ammount");
+			return new Status(false, "From account can not afford to transfer provided ammount");
 
 		Account toAccount = accountsRepository.getAccount(transferData.getToAccountId());
 		if (toAccount == null)
-			throw new InvalidAccountException("To Account can not be found");
+			return new Status(false, "To account can not be found");
 
 		//Core functionality 
 		try {
@@ -81,5 +82,6 @@ public class AccountsService {
 				String.format("A transfer from %s account with value %.5f has been received. ", fromAccountId,
 						transferData.getAmmount()));
 
+		return new Status(true, null);
 	}
 }
